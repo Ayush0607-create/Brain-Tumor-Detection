@@ -2,5 +2,5 @@
 
 Mini project on Brain Tumor detection using machine learning
 
-Name - Ayush Srivastav
+Name - Ayush Srivastava
 Graphic Era University
