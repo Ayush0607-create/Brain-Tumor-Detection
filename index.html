@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>Presentation</title>
+
+    <link rel="stylesheet" href="dist/reset.css">
+    <link rel="stylesheet" href="dist/reveal.css">
+    <link rel="stylesheet" href="dist/theme/night.css">
+    <link rel="stylesheet" href="plugin/highlight/monokai.css">
+    <script src="dist/reveal.js"></script>
+    <script src="plugin/notes/notes.js"></script>
+    <script src="plugin/markdown/markdown.js"></script>
+    <script src="plugin/highlight/highlight.js"></script>
+</head>
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Importing libraries
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+					import numpy as np
+					import pandas as pd
+					import os
+					import keras 
+					from keras.models import Sequential
+					from keras import layers
+					from PIL import Image
+					import matplotlib.pyplot as plt
+					from sklearn.model_selection import train_test_split
+					from sklearn.preprocessing import OneHotEncoder 
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Encoding targets
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						encoder = OneHotEncoder()
+						encoder.fit([[0], [1]]) 
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Loading data
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						data = []
+						paths = []
+						result = []
+
+						for r, d, f in os.walk(r'./yes'):
+							for file in f:
+								if '.jpg' in file:
+									paths.append(os.path.join(r, file))
+
+						for path in paths:
+							img = Image.open(path)
+							img = img.resize((128,128))
+							img = np.array(img)
+							if(img.shape == (128,128,3)):
+								data.append(np.array(img))
+								result.append(encoder.transform([[0]]).toarray())
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Splitting data
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						x_train,x_test,y_train,y_test = train_test_split(data, result,
+						 test_size=0.2, shuffle=True, random_state=0)
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Building model
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						model = Sequential()
+
+						model.add(layers.Conv2D(32, kernel_size=(2, 2), input_shape=(128, 128, 3), padding = 'Same'))
+						model.add(layers.Conv2D(32, kernel_size=(2, 2),  activation ='relu', padding = 'Same'))
+
+
+						model.add(layers.BatchNormalization())
+						model.add(layers.MaxPooling2D(pool_size=(2, 2)))
+						model.add(layers.Dropout(0.25))
+
+						model.add(layers.Conv2D(64, kernel_size = (2,2), activation ='relu', padding = 'Same'))
+						model.add(layers.Conv2D(64, kernel_size = (2,2), activation ='relu', padding = 'Same'))
+
+						model.add(layers.BatchNormalization())
+						model.add(layers.MaxPooling2D(pool_size=(2,2), strides=(2,2)))
+						model.add(layers.Dropout(0.25))
+
+						model.add(layers.Flatten())
+
+						model.add(layers.Dense(512, activation='relu'))
+						model.add(layers.Dropout(0.5))
+						model.add(layers.Dense(2, activation='softmax'))
+
+						model.compile(loss = "categorical_crossentropy", optimizer='Adam')
+						print(model.summary())
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Fitting model
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						history = model.fit(x_train, y_train, epochs = 30, batch_size = 40,validation_data = (x_test, y_test))
+					  </code></pre></section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Plotting loss
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						plt.figure(figsize = (12, 5))
+						plt.plot(history.history['loss'])
+						plt.plot(history.history['val_loss'])
+						plt.title('Model Loss')
+						plt.ylabel('Loss')
+						plt.xlabel('Epoch')
+						plt.legend(['Test', 'Validation'], loc='upper right')
+						plt.show()
+					  </code></pre></section>
+                <section>
+                    <img data-src="./loss.png">
+                </section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Plotting accuracy
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						plt.figure(figsize = (12, 5))
+						plt.plot(history.history['acc'])
+						plt.plot(history.history['val_acc'])
+						plt.title('Model Accuracy')
+						plt.ylabel('Accuracy')
+						plt.xlabel('Epoch')
+						plt.legend(['Test', 'Validation'], loc='upper right')
+						plt.show()
+					  </code></pre></section>
+                <section>
+                    <img data-src="./accuracy.png">
+                </section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Testing model #1
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						from matplotlib.pyplot import imshow
+						plt.figure(figsize=(6,6))
+						img = Image.open(r"./no/N17.jpg")
+						x = np.array(img.resize((128,128)))
+						x = x.reshape(1,128,128,3)
+						res = model.predict_on_batch(x)
+						classification = np.where(res == np.amax(res))[1][0]
+						imshow(img)
+						print(str(res[0][classification]*100) + '% Confidence This Is ' + names(classification))
+					  </code></pre></section>
+                <section>
+                    <img data-src="./loss.png">
+                </section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Testing model #2
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						from matplotlib.pyplot import imshow
+						plt.figure(figsize=(6,6))
+						img = Image.open(r"./yes/Y3.jpg")
+						x = np.array(img.resize((128,128)))
+						x = x.reshape(1,128,128,3)
+						res = model.predict_on_batch(x)
+						classification = np.where(res == np.amax(res))[1][0]
+						imshow(img)
+						print(str(res[0][classification]*100) + '% Confidence This Is A ' + names(classification))
+					  </code></pre></section>
+                <section>
+                    <img data-src="./loss.png">
+                </section>
+            </section>
+
+            <section>
+                <section data-markdown>
+                    <textarea data-template>
+						## Creating simple UI with anvil
+					  </textarea>
+                </section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						#creating uplink
+						import anvil.server
+						anvil.server.connect('H4CFYB62EVITOB6IUILJT3UG-XBSFUZ4XPAHLTLEK')
+					  </code></pre></section>
+                <section>
+                    <pre><code data-trim data-noescape>
+						#creaing callable function
+						import anvil.media
+						@anvil.server.callable
+						def classify_image(file):
+						  with anvil.media.TempFile(file) as filename:
+							img = Image.open(filename)
+							x = np.array(img.resize((128,128)))
+							x = x.reshape(1,128,128,3)
+							res = model.predict_on_batch(x)
+							classification = np.where(res == np.amax(res))[1][0]
+							return(str(res[0][classification]*100) + '% Confidence This Is A ' + names(classification))
+						  </code></pre></section>
+            </section>
+        </div>
+    </div>
+
+
+    <script>
+        Reveal.initialize({
+            controls: true, //comment it out
+            hash: true,
+            touch: true,
+            plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+        });
+    </script>
+</body>
+
+</html>
